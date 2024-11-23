@@ -35,12 +35,13 @@ class _HttpSampleScreenState extends State<HttpSampleScreen> {
   Future<String> getData() async {
     final url = Uri.parse('https://jsonplaceholder.typicode.com/posts/1');
     final response = await http.get(url);
-
-    setState(() {
-      body = response.body;
-    });
-
+    print(response.body);
     return response.body;
+  }
+
+  @override
+  void initState() {
+    super.initState();
   }
 
   @override
@@ -50,12 +51,17 @@ class _HttpSampleScreenState extends State<HttpSampleScreen> {
         title: const Text('HttpSampleScreen'),
       ),
       body: Center(
-        child: Text(body),
+        child: FutureBuilder<String>(
+            future: getData(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                body = snapshot.data!;
+              }
+              return Text(body);
+            }),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          getData();
-        },
+        onPressed: () {},
       ),
     );
   }

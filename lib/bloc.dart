@@ -1,16 +1,17 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final model = HttpSampleModel();
+  MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,30 +22,38 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HttpSampleScreen(),
+      home: BlocProvider<HttpSampleModel>(
+        create: (_) {
+          return HttpSampleModel();
+        },
+        child: const HttpSampleScreen(),
+      ),
     );
   }
 }
 
 // Screen (UI)
-class HttpSampleScreen extends ConsumerWidget {
+class HttpSampleScreen extends StatelessWidget {
   const HttpSampleScreen({
     super.key,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(modelNotifierProvider);
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('HttpSampleScreen'),
       ),
       body: Center(
-        child: Text('${state.body}, ${state.title}'),
+        child: BlocBuilder<HttpSampleModel, HttpSampleState>(
+          builder: (context, state) {
+            return Text('${state.body}, ${state.title}');
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          ref.read(modelNotifierProvider.notifier).fetchData();
+          context.read<HttpSampleModel>().fetchData();
         },
       ),
     );
@@ -52,12 +61,9 @@ class HttpSampleScreen extends ConsumerWidget {
 }
 
 // Model (상태 & 로직)
-class HttpSampleModel extends Notifier<HttpSampleState> {
+class HttpSampleModel extends Cubit<HttpSampleState> {
 // State
-  @override
-  HttpSampleState build() => HttpSampleState();
-
-  HttpSampleModel() {
+  HttpSampleModel() : super(HttpSampleState()) {
     fetchData();
   }
 
@@ -75,15 +81,14 @@ class HttpSampleModel extends Notifier<HttpSampleState> {
 
     //상태변경
 
-    state = state.copyWith(
-      body: jsonMap['body'],
-      title: jsonMap['title'],
+    emit(
+      state.copyWith(
+        body: jsonMap['body'],
+        title: jsonMap['title'],
+      ),
     );
   }
 }
-
-final modelNotifierProvider =
-    NotifierProvider<HttpSampleModel, HttpSampleState>(HttpSampleModel.new);
 
 class HttpSampleState {
   final String body;

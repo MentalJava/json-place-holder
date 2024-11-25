@@ -37,10 +37,7 @@ class _HttpSampleScreenState extends State<HttpSampleScreen> {
   @override
   void initState() {
     super.initState();
-
-    model.getUiData().whenComplete(
-          () => setState(() {}),
-        );
+    model.fetchData();
   }
 
   @override
@@ -50,7 +47,12 @@ class _HttpSampleScreenState extends State<HttpSampleScreen> {
         title: const Text('HttpSampleScreen'),
       ),
       body: Center(
-        child: Text('${model.body}, ${model.title}'),
+        child: ListenableBuilder(
+          listenable: model,
+          builder: (context, child) {
+            return Text('${model.value.body}, ${model.value.title}');
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
@@ -60,13 +62,11 @@ class _HttpSampleScreenState extends State<HttpSampleScreen> {
 }
 
 // Model (상태 & 로직)
-class HttpSampleModel {
+class HttpSampleModel extends ValueNotifier<HttpSampleState> {
 // State
-  String _body = "Loading";
-  String _title = '';
-
-  String get title => _title;
-  String get body => _body;
+  HttpSampleModel() : super(HttpSampleState()) {
+    fetchData();
+  }
 
   Future<String> _getData() async {
     final url = Uri.parse('https://jsonplaceholder.typicode.com/posts/1');
@@ -75,12 +75,39 @@ class HttpSampleModel {
     return response.body;
   }
 
-  Future<void> getUiData() async {
+  void fetchData() async {
     final jsonString = await _getData();
 
     final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
 
-    _body = jsonMap['body'];
-    _title = jsonMap['title'];
+    //상태변경
+
+    value = value.copyWith(
+      body: jsonMap['body'],
+      title: jsonMap['title'],
+    );
+
+    //외부에 알리기
+    notifyListeners();
+  }
+}
+
+class HttpSampleState {
+  final String body;
+  final String title;
+
+  HttpSampleState({
+    this.title = '',
+    this.body = 'Loading',
+  });
+
+  HttpSampleState copyWith({
+    final String? title,
+    final String? body,
+  }) {
+    return HttpSampleState(
+      title: title ?? this.title,
+      body: body ?? this.body,
+    );
   }
 }

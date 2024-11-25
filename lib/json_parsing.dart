@@ -24,7 +24,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Screen (UI)
 class HttpSampleScreen extends StatefulWidget {
   const HttpSampleScreen({super.key});
 
@@ -33,14 +32,19 @@ class HttpSampleScreen extends StatefulWidget {
 }
 
 class _HttpSampleScreenState extends State<HttpSampleScreen> {
-  final model = HttpSampleModel();
+  String body = "Loading";
+  String title = '';
+
+  Future<String> getData() async {
+    final url = Uri.parse('https://jsonplaceholder.typicode.com/posts/1');
+    final response = await http.get(url);
+    print(response.body);
+    return response.body;
+  }
+
   @override
   void initState() {
     super.initState();
-
-    model.getUiData().whenComplete(
-          () => setState(() {}),
-        );
   }
 
   @override
@@ -50,37 +54,22 @@ class _HttpSampleScreenState extends State<HttpSampleScreen> {
         title: const Text('HttpSampleScreen'),
       ),
       body: Center(
-        child: Text('${model.body}, ${model.title}'),
+        child: FutureBuilder<String>(
+            future: getData(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                final String jsonString = snapshot.data!;
+                final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
+
+                body = jsonMap['body'];
+                title = jsonMap['title'];
+              }
+              return Text('$body, $title');
+            }),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
       ),
     );
-  }
-}
-
-// Model (상태 & 로직)
-class HttpSampleModel {
-// State
-  String _body = "Loading";
-  String _title = '';
-
-  String get title => _title;
-  String get body => _body;
-
-  Future<String> _getData() async {
-    final url = Uri.parse('https://jsonplaceholder.typicode.com/posts/1');
-    final response = await http.get(url);
-    print(response.body);
-    return response.body;
-  }
-
-  Future<void> getUiData() async {
-    final jsonString = await _getData();
-
-    final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
-
-    _body = jsonMap['body'];
-    _title = jsonMap['title'];
   }
 }

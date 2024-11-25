@@ -37,10 +37,7 @@ class _HttpSampleScreenState extends State<HttpSampleScreen> {
   @override
   void initState() {
     super.initState();
-
-    model.getUiData().whenComplete(
-          () => setState(() {}),
-        );
+    model.fetchData();
   }
 
   @override
@@ -50,7 +47,12 @@ class _HttpSampleScreenState extends State<HttpSampleScreen> {
         title: const Text('HttpSampleScreen'),
       ),
       body: Center(
-        child: Text('${model.body}, ${model.title}'),
+        child: ListenableBuilder(
+          listenable: model,
+          builder: (context, child) {
+            return Text('${model.body}, ${model.title}');
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
@@ -60,7 +62,7 @@ class _HttpSampleScreenState extends State<HttpSampleScreen> {
 }
 
 // Model (상태 & 로직)
-class HttpSampleModel {
+class HttpSampleModel with ChangeNotifier {
 // State
   String _body = "Loading";
   String _title = '';
@@ -75,12 +77,16 @@ class HttpSampleModel {
     return response.body;
   }
 
-  Future<void> getUiData() async {
+  void fetchData() async {
     final jsonString = await _getData();
 
     final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
 
+    //상태변경
     _body = jsonMap['body'];
     _title = jsonMap['title'];
+
+    //외부에 알리기
+    notifyListeners();
   }
 }

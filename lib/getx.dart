@@ -1,50 +1,53 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final model = HttpSampleModel();
+  MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    Get.put(HttpSampleModel());
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HttpSampleScreen(),
+      home: HttpSampleScreen(),
     );
   }
 }
 
 // Screen (UI)
-class HttpSampleScreen extends ConsumerWidget {
-  const HttpSampleScreen({
+class HttpSampleScreen extends StatelessWidget {
+  final HttpSampleModel model = Get.find();
+  HttpSampleScreen({
     super.key,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(modelNotifierProvider);
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('HttpSampleScreen'),
       ),
       body: Center(
-        child: Text('${state.body}, ${state.title}'),
+        child: Obx(
+          () => Text('${model.state.value.body}, ${model.state.value.title}'),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          ref.read(modelNotifierProvider.notifier).fetchData();
+          model.fetchData();
         },
       ),
     );
@@ -52,10 +55,9 @@ class HttpSampleScreen extends ConsumerWidget {
 }
 
 // Model (상태 & 로직)
-class HttpSampleModel extends Notifier<HttpSampleState> {
+class HttpSampleModel extends GetxController {
 // State
-  @override
-  HttpSampleState build() => HttpSampleState();
+  var state = HttpSampleState().obs;
 
   HttpSampleModel() {
     fetchData();
@@ -75,15 +77,12 @@ class HttpSampleModel extends Notifier<HttpSampleState> {
 
     //상태변경
 
-    state = state.copyWith(
+    state.value = state.value.copyWith(
       body: jsonMap['body'],
       title: jsonMap['title'],
     );
   }
 }
-
-final modelNotifierProvider =
-    NotifierProvider<HttpSampleModel, HttpSampleState>(HttpSampleModel.new);
 
 class HttpSampleState {
   final String body;
